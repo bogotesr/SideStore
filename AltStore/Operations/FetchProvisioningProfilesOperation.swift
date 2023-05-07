@@ -384,19 +384,39 @@ extension FetchProvisioningProfilesOperation
         
         if app.isAltStoreApp
         {
+            print("Application groups before modifying for SideStore: \(applicationGroups)")
+            
+            // Remove app groups that contain AltStore since they can be problematic (cause SideStore to expire early)
+            for (index, group) in applicationGroups.enumerated() {
+                if group.contains("AltStore") {
+                    print("Removing application group: \(group)")
+                    applicationGroups.remove(at: index)
+                }
+            }
+            
+            // Make sure we add .AltWidget for the widget
+            var altStoreAppGroupID = Bundle.baseAltStoreAppGroupID
+            for (_, group) in applicationGroups.enumerated() {
+                if group.contains("AltWidget") {
+                    altStoreAppGroupID += ".AltWidget"
+                    break
+                }
+            }
+            
             // Potentially updating app groups for this specific AltStore.
             // Find the (unique) AltStore app group, then replace it
             // with the correct "base" app group ID.
             // Otherwise, we may append a duplicate team identifier to the end.
             if let index = applicationGroups.firstIndex(where: { $0.contains(Bundle.baseAltStoreAppGroupID) })
             {
-                applicationGroups[index] = Bundle.baseAltStoreAppGroupID
+                applicationGroups[index] = altStoreAppGroupID
             }
             else
             {
-                applicationGroups.append(Bundle.baseAltStoreAppGroupID)
+                applicationGroups.append(altStoreAppGroupID)
             }
         }
+        print("Application groups: \(applicationGroups)")
         
         // Dispatch onto global queue to prevent appGroupsLock deadlock.
         DispatchQueue.global().async {
@@ -478,10 +498,13 @@ extension FetchProvisioningProfilesOperation
                 ALTAppleAPI.shared.delete(profile, for: team, session: session) { (success, error) in
                     switch Result(success, error)
                     {
-                    case .failure(let error): completionHandler(.failure(error))
-                    case .success:
+                    case .failure:
+                        // As of March 20, 2023, the free provisioning profile is re-generated each fetch, and you can no longer delete it.
+                        // So instead, we just return the fetched profile from above.
+                        completionHandler(.success(profile))
                         
-                        // Fetch new provisiong profile
+                    case .success:
+                        // Fetch new provisioning profile
                         ALTAppleAPI.shared.fetchProvisioningProfile(for: appID, deviceType: .iphone, team: team, session: session) { (profile, error) in
                             completionHandler(Result(profile, error))
                         }
