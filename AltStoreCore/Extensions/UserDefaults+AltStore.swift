@@ -20,6 +20,7 @@ public extension UserDefaults
     }()
     
     @NSManaged var firstLaunch: Date?
+    @NSManaged var onboardingComplete: Bool
     @NSManaged var requiresAppGroupMigration: Bool
     @NSManaged var textServer: Bool
     @NSManaged var textInputAnisetteURL: String?
@@ -46,6 +47,7 @@ public extension UserDefaults
     @NSManaged var patronsRefreshID: String?
     
     @NSManaged var trustedSourceIDs: [String]?
+    @NSManaged var trustedServerURL: String?
     
     var activeAppsLimit: Int? {
         get {
@@ -77,6 +79,7 @@ public extension UserDefaults
             #keyPath(UserDefaults.isDevModeEnabled): false,
             #keyPath(UserDefaults.isConsoleEnabled): false,
             #keyPath(UserDefaults.isDebugLoggingEnabled): false,
+            #keyPath(UserDefaults.onboardingComplete): false,
             #keyPath(UserDefaults.isBackgroundRefreshEnabled): true,
             #keyPath(UserDefaults.isLegacyDeactivationSupported): isLegacyDeactivationSupported,
             #keyPath(UserDefaults.activeAppLimitIncludesExtensions): activeAppLimitIncludesExtensions,
